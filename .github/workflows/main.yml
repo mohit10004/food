@@ -1,27 +1,41 @@
-name: my first action
+name: Deploy to AWS EC2
 
-on: 
+on:
   push:
-     branches:
-     - master
+    branches:
+      - main
 
 jobs:
-  deployment:
-       runs-on: ubuntu-latest
-       steps:
-       - name: checkout
-         uses: action/checkout@v1
-       
-       - name: SSH into server and deploy
-         uses: appleboy/ssh-action@v0.1.4
-         with:
-          host: 192.168.100.161             # Replace with your server IP
-          username: root                # Replace with the server username, typically 'root'
-          password: 123     # Replace with your root password
-          script: |
-            echo "Deploying application..."
-            rm -rf /var/www/html/
-            cd /var/www/html/
-            systemctl restart apache2
-            
+  deploy:
+    runs-on: ubuntu-latest
 
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set Up AWS Private Key
+        run: |
+          echo "${{ secrets.AWS_PEM_KEY }}" > private-key.pem
+          chmod 600 private-key.pem
+
+      - name: Verify SSH Connection
+        run: |
+          ssh -i private-key.pem -o StrictHostKeyChecking=no ubuntu@34.219.69.196 "echo '✅ SSH Connected'"
+
+      - name: Copy Files to AWS EC2
+        run: |
+          scp -i private-key.pem -o StrictHostKeyChecking=no -r . ubuntu@34.219.69.196:/home/ubuntu/deploy-temp
+
+      - name: Deploy Files to Apache Directory
+        run: |
+          ssh -i private-key.pem -o StrictHostKeyChecking=no ubuntu@34.219.69.196 << 'EOF'
+            sudo rm -rf /var/www/html/*
+            sudo mv /home/ubuntu/deploy-temp/* /var/www/html/
+            sudo chown -R www-data:www-data /var/www/html
+            sudo chmod -R 755 /var/www/html
+            sudo systemctl restart apache2
+            echo '✅ Deployment Complete'
+          EOF
+
+      - name: Cleanup
+        run: rm -f private-key.pem
