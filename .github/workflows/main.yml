@@ -20,15 +20,15 @@ jobs:
 
       - name: Verify SSH Connection
         run: |
-          ssh -i private-key.pem -o StrictHostKeyChecking=no ubuntu@34.219.69.196 "echo '✅ SSH Connected'"
+          ssh -i private-key.pem -o StrictHostKeyChecking=no ubuntu@52.39.152.181 "echo '✅ SSH Connected'"
 
       - name: Copy Files to AWS EC2
         run: |
-          scp -i private-key.pem -o StrictHostKeyChecking=no -r . ubuntu@34.219.69.196:/home/ubuntu/deploy-temp
+          scp -i private-key.pem -o StrictHostKeyChecking=no -r . ubuntu@52.39.152.181:/home/ubuntu/deploy-temp
 
       - name: Deploy Files to Apache Directory
         run: |
-          ssh -i private-key.pem -o StrictHostKeyChecking=no ubuntu@34.219.69.196 << 'EOF'
+          ssh -i private-key.pem -o StrictHostKeyChecking=no ubuntu@52.39.152.181 << 'EOF'
             sudo rm -rf /var/www/html/*
             sudo mv /home/ubuntu/deploy-temp/* /var/www/html/
             sudo chown -R www-data:www-data /var/www/html
